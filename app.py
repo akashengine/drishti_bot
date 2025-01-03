@@ -5,11 +5,7 @@ import requests
 # API Configuration
 # -------------------------------------------------------------------------
 API_BASE_URL = "https://testing.drishtigpt.com/v1/chat-messages"
-
-# IMPORTANT: Make sure your Streamlit secrets have a key named "API_KEY"
-#            containing your valid key. e.g.:
-#   [secrets]
-#   API_KEY="123456XYZ"
+# Make sure your Streamlit secrets has a key "API_KEY" with your valid API key.
 API_KEY = st.secrets["API_KEY"]
 
 
@@ -67,7 +63,7 @@ if "menu_visible" not in st.session_state:
     st.session_state.menu_visible = False
 
 def toggle_menu():
-    """Toggle the pop-up menu above the + button."""
+    """Toggles the visibility of the pop-up menu."""
     st.session_state.menu_visible = not st.session_state.menu_visible
 
 # -------------------------------------------------------------------------
@@ -76,8 +72,9 @@ def toggle_menu():
 st.markdown("""
     <style>
     /* 
-      The container that holds BOTH the text input and the + button,
-      pinned at bottom center of the page.
+      action-container:
+      Pinned at bottom center to hold BOTH the text input 
+      and the + button (with its popup menu).
     */
     .action-container {
         display: flex;
@@ -87,15 +84,16 @@ st.markdown("""
         bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
-        z-index: 999;  /* ensure it's on top */
+        z-index: 999; /* Keep on top of other elements */
     }
 
     /* 
-      A wrapper for the text input so it can grow (optional).
-      This helps keep the input separate from the button container.
+      input-wrapper: 
+      Holds the text input, giving a bit of space on the right 
+      so the + button isn't too close.
     */
     .input-wrapper {
-        margin-right: 10px;  /* some spacing to the left of the button */
+        margin-right: 10px;
     }
     .input-wrapper > div > input {
         width: 300px;
@@ -105,17 +103,18 @@ st.markdown("""
         border-radius: 5px;
     }
 
-    /* 
-      Container for the + button and the popup menu 
-      so we can position the menu absolutely relative to this container.
+    /*
+      button-container:
+      A relatively positioned container for the + button and 
+      the absolutely positioned pop-up menu.
     */
     .button-container {
         position: relative;
     }
 
-    /* 
+    /*
       Style the built-in Streamlit button to look like a round + icon.
-      We'll place an icon as a background image in the button.
+      We place an icon as a background image in the button.
     */
     div[data-testid="stButton"] > button {
         width: 50px;
@@ -129,16 +128,18 @@ st.markdown("""
         border: none;
         cursor: pointer;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        color: transparent; /* hide default text (a blank space) */
+        color: transparent; /* hides the default text (which is just a space) */
     }
 
     /* 
-      The pop-up menu, absolutely placed so it appears above the + button.
-      bottom: 60px ensures it sits above the 50px button plus some margin.
+      The pop-up menu, absolutely placed so it appears 
+      just above the + button. 
+      Adjust "bottom: 55px;" to fine-tune how close it is 
+      above the button. 
     */
     .menu {
         position: absolute;
-        bottom: 60px;
+        bottom: 55px;  /* put it snugly above the 50px icon */
         left: 50%;
         transform: translateX(-50%);
         background-color: white;
@@ -147,6 +148,10 @@ st.markdown("""
         padding: 10px;
         z-index: 1000;
     }
+
+    /* 
+      Buttons within the pop-up menu 
+    */
     .menu button {
         display: block;
         width: 100%;
@@ -168,17 +173,20 @@ st.markdown("""
 # -------------------------------------------------------------------------
 st.markdown('<div class="action-container">', unsafe_allow_html=True)
 
-# Text Input to the left
+# Text Input
 st.markdown('<div class="input-wrapper">', unsafe_allow_html=True)
-user_query = st.text_input("", placeholder="Type your query...", key="chat_input", label_visibility="collapsed")
+user_query = st.text_input("", placeholder="Type your query...", 
+                           key="chat_input", label_visibility="collapsed")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# + Button and (conditionally) the menu
+# + Button and pop-up menu
 st.markdown('<div class="button-container">', unsafe_allow_html=True)
+
+# The round + button:
 if st.button(" ", key="toggle_button"):
     toggle_menu()
 
-# If toggled, show the pop-up menu
+# Conditionally render the menu above the button
 if st.session_state.menu_visible:
     st.markdown("""
         <div class="menu">
@@ -188,14 +196,14 @@ if st.session_state.menu_visible:
         </div>
     """, unsafe_allow_html=True)
 
-st.markdown('</div>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)  # close button-container
+st.markdown('</div>', unsafe_allow_html=True)  # close action-container
 
 # -------------------------------------------------------------------------
 # Example Usage: API calls
 # -------------------------------------------------------------------------
-# If the user typed a query, we can process it.
+# If the user typed a query, you can decide how to handle it:
 if user_query:
-    # For demonstration, request a "summary" from the API
+    # Example: let's request a "summary" from the API
     response = send_chat_request(selected_video_id, "summary", user_query)
     st.write("**API Response**:", response)
