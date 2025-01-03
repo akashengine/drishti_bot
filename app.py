@@ -3,8 +3,7 @@ import requests
 
 # API Configuration
 API_BASE_URL = "http://testing.drishtigpt.com/v1/chat-messages"
-API_KEY = "app-RCjaiFBd7PURraoAZGHmlLC5"
-
+API_KEY = st.secrets["API_KEY"]
 # Fetch Summary from API
 def fetch_summary(video_id, user_id="unique-user-id"):
     query = f"Please summarize video ID {video_id}."
