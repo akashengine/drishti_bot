@@ -6,6 +6,9 @@ import json
 API_BASE_URL = "https://testing.drishtigpt.com/v1/chat-messages"
 API_KEY = st.secrets["API_KEY"]  # Securely retrieve API Key
 
+# Initialize session state for quiz data
+if 'quiz_data' not in st.session_state:
+    st.session_state.quiz_data = None
 
 def send_chat_request(video_id, request_type, query="."):
     """
@@ -35,7 +38,6 @@ def send_chat_request(video_id, request_type, query="."):
     except Exception as e:
         return f"An error occurred: {e}"
 
-
 def preprocess_quiz_data(raw_data):
     """
     Preprocesses raw quiz JSON string to convert it into a valid list of JSON objects.
@@ -50,7 +52,6 @@ def preprocess_quiz_data(raw_data):
         st.error(f"Failed to preprocess quiz data: {e}")
         return None
 
-
 def render_quiz(quiz_data):
     """
     Renders the quiz dynamically based on the JSON response.
@@ -60,7 +61,14 @@ def render_quiz(quiz_data):
         return
 
     st.subheader("Quiz Me")
-    user_answers = []
+    
+    # Initialize session state for user answers if not exists
+    if 'user_answers' not in st.session_state:
+        st.session_state.user_answers = [None] * len(quiz_data)
+    
+    # Initialize session state for quiz submission
+    if 'quiz_submitted' not in st.session_state:
+        st.session_state.quiz_submitted = False
 
     for idx, question in enumerate(quiz_data, start=1):
         st.markdown(f"### {idx}. {question['Question']}")
@@ -70,28 +78,41 @@ def render_quiz(quiz_data):
             question["Option 3"],
             question["Option 4"],
         ]
-        user_answer = st.radio(
+        
+        # Use session state to store the selected answer
+        answer_key = f"q_{idx}"
+        if answer_key not in st.session_state:
+            st.session_state[answer_key] = st.session_state.user_answers[idx-1]
+            
+        selected_answer = st.radio(
             f"Select your answer for Question {idx}:",
             options,
-            key=f"q_{idx}",
+            key=answer_key,
         )
-        user_answers.append({
-            "user_answer": user_answer,
-            "correct_answer": question["Correct Answer"],
-            "explanation": question["Explanation"]
-        })
+        st.session_state.user_answers[idx-1] = selected_answer
 
     if st.button("Submit Quiz"):
+        st.session_state.quiz_submitted = True
+
+    # Show results after submission
+    if st.session_state.quiz_submitted:
         st.markdown("### Quiz Results")
-        for idx, answer in enumerate(user_answers, start=1):
-            if answer["user_answer"] == answer["correct_answer"]:
+        total_correct = 0
+        
+        for idx, (answer, question) in enumerate(zip(st.session_state.user_answers, quiz_data), start=1):
+            is_correct = answer == question["Correct Answer"]
+            if is_correct:
+                total_correct += 1
                 st.success(f"✅ Question {idx}: Correct")
             else:
                 st.error(f"❌ Question {idx}: Incorrect")
-            st.markdown(f"**Your Answer:** {answer['user_answer']}")
-            st.markdown(f"**Correct Answer:** {answer['correct_answer']}")
-            st.markdown(f"**Explanation:** {answer['explanation']}")
-
+            st.markdown(f"**Your Answer:** {answer}")
+            st.markdown(f"**Correct Answer:** {question['Correct Answer']}")
+            st.markdown(f"**Explanation:** {question['Explanation']}")
+        
+        # Display total score
+        score_percentage = (total_correct / len(quiz_data)) * 100
+        st.markdown(f"### Final Score: {total_correct}/{len(quiz_data)} ({score_percentage:.1f}%)")
 
 # Streamlit App Layout
 st.set_page_config(page_title="DrishtiGPT", layout="wide")
@@ -162,15 +183,22 @@ with col1:
 
 # Quiz Me Button
 with col2:
-    if st.button("Quiz Me"):
-        st.subheader("Quiz Me")
-        with st.spinner("Fetching quiz..."):
-            quiz_response = send_chat_request(selected_video_id, "Quiz Me")
-        if "Error" not in quiz_response:
-            parsed_data = preprocess_quiz_data(quiz_response)
-            render_quiz(parsed_data)
-        else:
-            st.error(quiz_response)
+    if st.button("Quiz Me") or st.session_state.quiz_data is not None:
+        if st.session_state.quiz_data is None:
+            st.subheader("Quiz Me")
+            with st.spinner("Fetching quiz..."):
+                quiz_response = send_chat_request(selected_video_id, "Quiz Me")
+            if "Error" not in quiz_response:
+                st.session_state.quiz_data = preprocess_quiz_data(quiz_response)
+                # Reset quiz state when loading new quiz
+                st.session_state.quiz_submitted = False
+                if 'user_answers' in st.session_state:
+                    del st.session_state.user_answers
+            else:
+                st.error(quiz_response)
+        
+        if st.session_state.quiz_data:
+            render_quiz(st.session_state.quiz_data)
 
 # Placeholder for Ask a Question
 with col3:
