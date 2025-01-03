@@ -48,7 +48,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Toggle State for Menu
+# Initialize Menu State
 if "menu_visible" not in st.session_state:
     st.session_state.menu_visible = False
 
@@ -56,22 +56,87 @@ if "menu_visible" not in st.session_state:
 def toggle_menu():
     st.session_state.menu_visible = not st.session_state.menu_visible
 
+# CSS Styling for Alignment and Button
+st.markdown("""
+    <style>
+    .action-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        bottom: 20px;
+        width: 100%;
+    }
+    .chat-input {
+        width: 300px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-right: 10px;
+    }
+    .action-button {
+        width: 60px;
+        height: 60px;
+        border-radius: 30px;
+        background-color: #007bff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .action-button img {
+        width: 30px;
+        height: 30px;
+    }
+    .menu {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        background-color: white;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        padding: 10px;
+        z-index: 1000;
+    }
+    .menu button {
+        display: block;
+        width: 100%;
+        margin-bottom: 10px;
+        background: none;
+        border: none;
+        text-align: left;
+        cursor: pointer;
+    }
+    .menu button:hover {
+        background-color: #f0f0f0;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Input and Action Button Layout
-col1, col2 = st.columns([4, 1], gap="small")
+st.markdown('<div class="action-container">', unsafe_allow_html=True)
 
-with col1:
-    user_query = st.text_input("", placeholder="Type your query...", key="chat_input")
+# Chat Input
+user_query = st.text_input("", placeholder="Type your query...", key="chat_input", label_visibility="collapsed")
 
-with col2:
-    if st.button("+"):
-        toggle_menu()
+# Action Button with Icon
+if st.button("+", key="toggle_button"):
+    toggle_menu()
+st.markdown("""
+    <div class="action-button" onclick="toggleMenu()">
+        <img src="https://img.icons8.com/ios-glyphs/30/e74c3c/plus-math.png" alt="Add">
+    </div>
+""", unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # Pop-Up Menu
 if st.session_state.menu_visible:
     st.markdown("""
-        <div style="position: absolute; bottom: 100px; right: 50px; background-color: white; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); border-radius: 10px; padding: 10px; z-index: 1000;">
-            <button style="display: block; width: 100%; margin-bottom: 10px; background: none; border: none; text-align: left; cursor: pointer;">Summary</button>
-            <button style="display: block; width: 100%; margin-bottom: 10px; background: none; border: none; text-align: left; cursor: pointer;">Quiz Me</button>
-            <button style="display: block; width: 100%; background: none; border: none; text-align: left; cursor: pointer;">Ask a Question</button>
+        <div class="menu">
+            <button onclick="alert('Summary')">Summary</button>
+            <button onclick="alert('Quiz Me')">Quiz Me</button>
+            <button onclick="alert('Ask a Question')">Ask a Question</button>
         </div>
     """, unsafe_allow_html=True)
