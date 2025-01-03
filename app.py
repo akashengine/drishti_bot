@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import json
 
 # API Configuration
 API_BASE_URL = "https://testing.drishtigpt.com/v1/chat-messages"
@@ -35,16 +36,26 @@ def send_chat_request(video_id, request_type, query="."):
         return f"An error occurred: {e}"
 
 
+def parse_quiz_data(raw_data):
+    """
+    Parses raw quiz JSON data, handling errors gracefully.
+    """
+    try:
+        # Handle cases where JSON is improperly formatted
+        data = json.loads(f"[{raw_data.replace('}{', '},{')}]")
+        return data
+    except Exception as e:
+        st.error(f"Failed to parse quiz data: {e}")
+        return None
+
+
 def render_quiz(quiz_data):
     """
     Renders the quiz dynamically based on the JSON response.
     """
-    if isinstance(quiz_data, str):
-        try:
-            quiz_data = eval(quiz_data)  # Convert JSON string to Python list
-        except Exception as e:
-            st.error(f"Invalid quiz data format: {e}")
-            return
+    if not quiz_data:
+        st.error("No valid quiz data available.")
+        return
 
     st.subheader("Quiz Me")
     user_answers = []
@@ -154,10 +165,8 @@ with col2:
         with st.spinner("Fetching quiz..."):
             quiz_response = send_chat_request(selected_video_id, "Quiz Me")
         if "Error" not in quiz_response:
-            try:
-                render_quiz(eval(quiz_response))
-            except Exception as e:
-                st.error(f"Invalid quiz format: {e}")
+            parsed_data = parse_quiz_data(quiz_response)
+            render_quiz(parsed_data)
         else:
             st.error(quiz_response)
 
