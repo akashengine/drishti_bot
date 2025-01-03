@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # API Configuration
-API_BASE_URL = "https://testing.drishtigpt.com/v1/chat-messages"
+API_BASE_URL = "http://testing.drishtigpt.com/v1/chat-messages"
 API_KEY = st.secrets["API_KEY"]  # Securely retrieve API Key
 
 def send_chat_request(video_id, request_type, query="."):
@@ -123,7 +123,8 @@ with col1:
             summary_response = send_chat_request(selected_video_id, "Summary")
         if "Error" not in summary_response:
             st.success("Summary fetched successfully!")
-            st.markdown(summary_response, unsafe_allow_html=True)
+            # Render HTML if present in the response
+            st.components.v1.html(summary_response, height=500, scrolling=True)
         else:
             st.error(summary_response)
 
