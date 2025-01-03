@@ -6,9 +6,23 @@ import json
 API_BASE_URL = "https://testing.drishtigpt.com/v1/chat-messages"
 API_KEY = st.secrets["API_KEY"]  # Securely retrieve API Key
 
-# Initialize session state for quiz data
+# Initialize session state variables
 if 'quiz_data' not in st.session_state:
     st.session_state.quiz_data = None
+if 'show_quiz' not in st.session_state:
+    st.session_state.show_quiz = False
+    
+def fetch_new_quiz():
+    st.session_state.show_quiz = True
+    with st.spinner("Fetching quiz..."):
+        quiz_response = send_chat_request(st.session_state.video_id, "Quiz Me")
+    if "Error" not in quiz_response:
+        st.session_state.quiz_data = preprocess_quiz_data(quiz_response)
+        st.session_state.quiz_submitted = False
+        if 'user_answers' in st.session_state:
+            del st.session_state.user_answers
+    else:
+        st.error(quiz_response)
 
 def send_chat_request(video_id, request_type, query="."):
     """
@@ -183,20 +197,12 @@ with col1:
 
 # Quiz Me Button
 with col2:
-    quiz_button = st.button("Quiz Me")
-    if quiz_button:  # If Quiz Me button is clicked, reset and regenerate
-        st.subheader("Quiz Me")
-        with st.spinner("Fetching quiz..."):
-            quiz_response = send_chat_request(selected_video_id, "Quiz Me")
-        if "Error" not in quiz_response:
-            st.session_state.quiz_data = preprocess_quiz_data(quiz_response)
-            # Reset quiz state when loading new quiz
-            st.session_state.quiz_submitted = False
-            if 'user_answers' in st.session_state:
-                del st.session_state.user_answers
-        else:
-            st.error(quiz_response)
-    elif st.session_state.quiz_data is not None:  # Show existing quiz if available
+    st.session_state.video_id = selected_video_id  # Store video_id in session state
+    if st.button("Quiz Me"):
+        fetch_new_quiz()
+        
+    # Show quiz if it should be displayed
+    if st.session_state.show_quiz:
         
         if st.session_state.quiz_data:
             render_quiz(st.session_state.quiz_data)
