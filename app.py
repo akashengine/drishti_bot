@@ -211,16 +211,45 @@ with col2:
 with col3:
     if st.button("Ask a Doubt"):
         st.subheader("Ask a Doubt")
-        # Create the iframe HTML with pre-filled parameters
+        # Create HTML with iframe and script to pre-fill fields
         dify_chat_html = f'''
             <iframe
-                src="https://testing.drishtigpt.com/chat/new?video_id={selected_video_id}&request_type=Ask+a+Doubt"
+                id="difyFrame"
+                src="https://testing.drishtigpt.com"
                 width="100%"
                 height="600px"
                 frameborder="0"
                 allow="microphone"
                 style="border: 1px solid #ccc; border-radius: 8px;"
+                onload="prefillDifyForm()"
             ></iframe>
+            
+            <script>
+                function prefillDifyForm() {{
+                    setTimeout(() => {{
+                        const frame = document.getElementById('difyFrame');
+                        if (frame && frame.contentWindow) {{
+                            // Pre-fill the Video ID input
+                            const videoInput = frame.contentDocument.querySelector('input[placeholder="Video ID"]');
+                            if (videoInput) {{
+                                videoInput.value = "{selected_video_id}";
+                                // Trigger input event to ensure proper form state update
+                                const event = new Event('input', {{ bubbles: true }});
+                                videoInput.dispatchEvent(event);
+                            }}
+                            
+                            // Set Request Type dropdown to "Ask a Doubt"
+                            const requestSelect = frame.contentDocument.querySelector('select');
+                            if (requestSelect) {{
+                                requestSelect.value = "Ask a Doubt";
+                                // Trigger change event to ensure proper form state update
+                                const event = new Event('change', {{ bubbles: true }});
+                                requestSelect.dispatchEvent(event);
+                            }}
+                        }}
+                    }}, 1000); // Give the iframe content time to load
+                }}
+            </script>
         '''
         st.components.v1.html(dify_chat_html, height=650)
 
