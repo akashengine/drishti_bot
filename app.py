@@ -41,7 +41,6 @@ def preprocess_quiz_data(raw_data):
     Preprocesses raw quiz JSON string to convert it into a valid list of JSON objects.
     """
     try:
-        # Split the string into individual JSON objects and wrap them in an array
         raw_data = raw_data.replace("\n", "").replace("}{", "},{")
         formatted_data = f"[{raw_data}]"
         quiz_data = json.loads(formatted_data)
@@ -60,8 +59,12 @@ def render_quiz(quiz_data):
         return
 
     st.subheader("Quiz Me")
-    user_answers = []
+    if "submitted" not in st.session_state:
+        st.session_state.submitted = False
+    if "user_answers" not in st.session_state:
+        st.session_state.user_answers = {}
 
+    # Display quiz questions
     for idx, question in enumerate(quiz_data, start=1):
         st.markdown(f"### {idx}. {question['Question']}")
         options = [
@@ -70,27 +73,35 @@ def render_quiz(quiz_data):
             question["Option 3"],
             question["Option 4"],
         ]
-        user_answer = st.radio(
+        if idx not in st.session_state.user_answers:
+            st.session_state.user_answers[idx] = None
+
+        st.session_state.user_answers[idx] = st.radio(
             f"Select your answer for Question {idx}:",
             options,
             key=f"q_{idx}",
+            index=options.index(st.session_state.user_answers[idx]) if st.session_state.user_answers[idx] else 0,
         )
-        user_answers.append({
-            "user_answer": user_answer,
-            "correct_answer": question["Correct Answer"],
-            "explanation": question["Explanation"]
-        })
 
+    # Submit button
     if st.button("Submit Quiz"):
+        st.session_state.submitted = True
+
+    # Display results
+    if st.session_state.submitted:
         st.markdown("### Quiz Results")
-        for idx, answer in enumerate(user_answers, start=1):
-            if answer["user_answer"] == answer["correct_answer"]:
+        for idx, question in enumerate(quiz_data, start=1):
+            user_answer = st.session_state.user_answers[idx]
+            correct_answer = question["Correct Answer"]
+            explanation = question["Explanation"]
+
+            if user_answer == correct_answer:
                 st.success(f"✅ Question {idx}: Correct")
             else:
                 st.error(f"❌ Question {idx}: Incorrect")
-            st.markdown(f"**Your Answer:** {answer['user_answer']}")
-            st.markdown(f"**Correct Answer:** {answer['correct_answer']}")
-            st.markdown(f"**Explanation:** {answer['explanation']}")
+            st.markdown(f"**Your Answer:** {user_answer}")
+            st.markdown(f"**Correct Answer:** {correct_answer}")
+            st.markdown(f"**Explanation:** {explanation}")
 
 
 # Streamlit App Layout
