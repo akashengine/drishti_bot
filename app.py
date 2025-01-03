@@ -7,7 +7,7 @@ import requests
 API_BASE_URL = "https://testing.drishtigpt.com/v1/chat-messages"
 
 # IMPORTANT: Make sure your Streamlit secrets have a key named "API_KEY"
-#            containing your valid key. For example:
+#            containing your valid key. e.g.:
 #   [secrets]
 #   API_KEY="123456XYZ"
 API_KEY = st.secrets["API_KEY"]
@@ -40,7 +40,6 @@ def send_chat_request(video_id, request_type, query="."):
     if response.status_code == 200:
         return response.json().get("answer", "No response available.")
     else:
-        # Return a helpful error message in case of non-200
         return f"Error: {response.status_code} - {response.json().get('message', response.text)}"
 
 
@@ -68,46 +67,61 @@ if "menu_visible" not in st.session_state:
     st.session_state.menu_visible = False
 
 def toggle_menu():
-    """Toggles the visibility of the pop-up menu."""
+    """Toggle the pop-up menu above the + button."""
     st.session_state.menu_visible = not st.session_state.menu_visible
 
 # -------------------------------------------------------------------------
-# Custom CSS for Input and Button Alignment
+# Custom CSS for Input, Button, and Menu
 # -------------------------------------------------------------------------
 st.markdown("""
     <style>
-    /* Container at bottom, centered */
+    /* 
+      The container that holds BOTH the text input and the + button,
+      pinned at bottom center of the page.
+    */
     .action-container {
         display: flex;
+        justify-content: center;
         align-items: center;
         position: fixed;
         bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
-        z-index: 999;  /* ensures it stays on top of other elements */
-    }
-
-    /* Widen the text_input slightly and style it */
-    div.action-container > div > input {
-        flex-grow: 1;
-        max-width: 300px;
-        padding: 10px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
+        z-index: 999;  /* ensure it's on top */
     }
 
     /* 
-      Style the built-in Streamlit button to look like a round + icon
-      Adjust background-color, icon, etc. if desired.
+      A wrapper for the text input so it can grow (optional).
+      This helps keep the input separate from the button container.
     */
-    div[data-testid="stButton"] {
-        margin-left: 10px;
+    .input-wrapper {
+        margin-right: 10px;  /* some spacing to the left of the button */
     }
+    .input-wrapper > div > input {
+        width: 300px;
+        max-width: 300px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    /* 
+      Container for the + button and the popup menu 
+      so we can position the menu absolutely relative to this container.
+    */
+    .button-container {
+        position: relative;
+    }
+
+    /* 
+      Style the built-in Streamlit button to look like a round + icon.
+      We'll place an icon as a background image in the button.
+    */
     div[data-testid="stButton"] > button {
         width: 50px;
         height: 50px;
         border-radius: 25px;
-        background-color: #007bff !important; /* A nice blue circle */
+        background-color: #007bff !important; /* a nice blue color */
         background-image: url("https://img.icons8.com/ios-glyphs/30/ffffff/plus-math.png");
         background-repeat: no-repeat;
         background-position: center;
@@ -115,17 +129,20 @@ st.markdown("""
         border: none;
         cursor: pointer;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        color: transparent;  /* Hide default text (which is just a space) */
+        color: transparent; /* hide default text (a blank space) */
     }
 
-    /* Pop-up menu styling */
+    /* 
+      The pop-up menu, absolutely placed so it appears above the + button.
+      bottom: 60px ensures it sits above the 50px button plus some margin.
+    */
     .menu {
-        position: fixed;
-        bottom: 90px;
+        position: absolute;
+        bottom: 60px;
         left: 50%;
         transform: translateX(-50%);
         background-color: white;
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         border-radius: 10px;
         padding: 10px;
         z-index: 1000;
@@ -147,29 +164,22 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# Bottom Input + Toggle Button
+# Bottom Input + Toggle (+) Button
 # -------------------------------------------------------------------------
 st.markdown('<div class="action-container">', unsafe_allow_html=True)
 
-# User query text input
-user_query = st.text_input(
-    "",
-    placeholder="Type your query...",
-    key="chat_input",
-    label_visibility="collapsed"
-)
+# Text Input to the left
+st.markdown('<div class="input-wrapper">', unsafe_allow_html=True)
+user_query = st.text_input("", placeholder="Type your query...", key="chat_input", label_visibility="collapsed")
+st.markdown('</div>', unsafe_allow_html=True)
 
-# Button that toggles the menu
+# + Button and (conditionally) the menu
+st.markdown('<div class="button-container">', unsafe_allow_html=True)
 if st.button(" ", key="toggle_button"):
     toggle_menu()
 
-st.markdown('</div>', unsafe_allow_html=True)
-
-# -------------------------------------------------------------------------
-# Pop-Up Menu
-# -------------------------------------------------------------------------
+# If toggled, show the pop-up menu
 if st.session_state.menu_visible:
-    # Render the simple popup menu
     st.markdown("""
         <div class="menu">
             <button onclick="alert('Summary')">Summary</button>
@@ -178,11 +188,14 @@ if st.session_state.menu_visible:
         </div>
     """, unsafe_allow_html=True)
 
+st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
+
 # -------------------------------------------------------------------------
 # Example Usage: API calls
 # -------------------------------------------------------------------------
-# If the user submitted a query, you can decide how to handle it:
+# If the user typed a query, we can process it.
 if user_query:
-    # Example: let's request a "summary" from the API
+    # For demonstration, request a "summary" from the API
     response = send_chat_request(selected_video_id, "summary", user_query)
     st.write("**API Response**:", response)
