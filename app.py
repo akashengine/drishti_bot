@@ -212,31 +212,44 @@ with col3:
     if st.button("Ask a Doubt"):
         st.subheader("Ask a Doubt")
         # Create HTML with iframe and script to pre-fill fields
-        dify_chat_html = f"""
-        <iframe
-            id="difyFrame"
-            src="https://testing.drishtigpt.com/chat/g7l6cqexzdEJFhqD"
-            width="100%"
-            height="600px"
-            frameborder="0"
-            allow="microphone"
-            style="border: 1px solid #ccc; border-radius: 8px;"
-        ></iframe>
-
-        <script>
-            document.getElementById('difyFrame').onload = () => {{
-                // The data we want to send into the iframe
-                const payload = {{
-                    video_id: "{selected_video_id}",
-                    request_type: "{selected_request_type}"
-                }};
-
-                // We'll post a message to the child iframe's window
-                // The origin must match the iframe's domain
-                const iframe = document.getElementById('difyFrame');
-                iframe.contentWindow.postMessage(payload, "https://testing.drishtigpt.com");
-            }};
-        </script>
+        dify_chat_html = f'''
+            <iframe
+                id="difyFrame"
+                src="https://testing.drishtigpt.com/chat/g7l6cqexzdEJFhqD"
+                width="100%"
+                height="600px"
+                frameborder="0"
+                allow="microphone"
+                style="border: 1px solid #ccc; border-radius: 8px;"
+                onload="prefillDifyForm()"
+            ></iframe>
+            
+            <script>
+                function prefillDifyForm() {{
+                    setTimeout(() => {{
+                        const frame = document.getElementById('difyFrame');
+                        if (frame && frame.contentWindow) {{
+                            // Pre-fill the Video ID input
+                            const videoInput = frame.contentDocument.querySelector('input[placeholder="Video ID"]');
+                            if (videoInput) {{
+                                videoInput.value = "{selected_video_id}";
+                                // Trigger input event to ensure proper form state update
+                                const event = new Event('input', {{ bubbles: true }});
+                                videoInput.dispatchEvent(event);
+                            }}
+                            
+                            // Set Request Type dropdown to "Ask a Doubt"
+                            const requestSelect = frame.contentDocument.querySelector('select');
+                            if (requestSelect) {{
+                                requestSelect.value = "Ask a Doubt";
+                                // Trigger change event to ensure proper form state update
+                                const event = new Event('change', {{ bubbles: true }});
+                                requestSelect.dispatchEvent(event);
+                            }}
+                        }}
+                    }}, 1000); // Give the iframe content time to load
+                }}
+            </script>
         '''
         st.components.v1.html(dify_chat_html, height=650)
 
