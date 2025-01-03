@@ -35,94 +35,60 @@ def send_chat_request(video_id, request_type, query="."):
         return f"An error occurred: {e}"
 
 
+def render_quiz(quiz_data):
+    """
+    Renders the quiz dynamically based on the JSON response.
+    """
+    if isinstance(quiz_data, str):
+        try:
+            quiz_data = eval(quiz_data)  # Convert JSON string to Python dictionary
+        except Exception as e:
+            st.error(f"Invalid quiz data format: {e}")
+            return
+
+    st.subheader("Quiz Me")
+    user_answers = []
+
+    for idx, question in enumerate(quiz_data, start=1):
+        st.markdown(f"### {idx}. {question['Question']}")
+        options = [
+            question["Option 1"],
+            question["Option 2"],
+            question["Option 3"],
+            question["Option 4"],
+        ]
+        user_answer = st.radio(
+            f"Select your answer for Question {idx}:",
+            options,
+            key=f"q_{idx}",
+        )
+        user_answers.append({"user_answer": user_answer, "correct_answer": question["Correct Answer"], "explanation": question["Explanation"]})
+
+    if st.button("Submit"):
+        st.markdown("### Quiz Results")
+        for idx, answer in enumerate(user_answers, start=1):
+            if answer["user_answer"] == answer["correct_answer"]:
+                st.success(f"✅ Question {idx}: Correct")
+            else:
+                st.error(f"❌ Question {idx}: Incorrect")
+            st.markdown(f"**Your Answer:** {answer['user_answer']}")
+            st.markdown(f"**Correct Answer:** {answer['correct_answer']}")
+            st.markdown(f"**Explanation:** {answer['explanation']}")
+
+
 # Streamlit App Layout
 st.set_page_config(page_title="DrishtiGPT", layout="wide")
 
-# CSS for Custom Styling
-st.markdown(
-    """
-    <style>
-    .main-container {
-        max-width: 800px;
-        margin: auto;
-    }
-    .video-placeholder {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 300px;
-        background-color: #f0f0f0;
-        border: 1px solid #ccc;
-        margin-bottom: 20px;
-    }
-    .tabs-container {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-    }
-    .tabs-container button {
-        padding: 10px 20px;
-        font-size: 14px;
-        border: none;
-        cursor: pointer;
-        border-radius: 5px;
-        background-color: #007bff;
-        color: white;
-    }
-    .tabs-container button:hover {
-        background-color: #0056b3;
-    }
-    .logo-container {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 20px;
-    }
-    .custom-header {
-        text-align: center;
-        margin-top: 20px;
-        font-size: 24px;
-        font-weight: bold;
-    }
-    .sidebar {
-        margin-top: 20px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# Logo
-st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-st.image(
-    "https://drishtigpt.com/upload/images/logo/ZqUG-dashboard-2x-drishtigpt-logo.svg",
-    width=200,
-)
-st.markdown("</div>", unsafe_allow_html=True)
-
 # Sidebar for Video Selection
 st.sidebar.title("DrishtiGPT")
-st.sidebar.markdown('<div class="sidebar">', unsafe_allow_html=True)
 video_ids = ["7781", "7782", "7783"]  # Dummy Video IDs
 selected_video_id = st.sidebar.selectbox("Select Video ID", video_ids)
-st.sidebar.markdown("</div>", unsafe_allow_html=True)
 
 # Main Content
-st.markdown('<div class="main-container">', unsafe_allow_html=True)
-st.markdown(
-    f"""
-    <div class="video-placeholder">
-        <p>Video Placeholder - Video ID: {selected_video_id}</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+st.markdown(f"## Video Placeholder - Video ID: {selected_video_id}")
 
 # Buttons for Actions
-st.markdown('<div class="tabs-container">', unsafe_allow_html=True)
+st.markdown("### Actions")
 
 col1, col2, col3 = st.columns(3)
 
@@ -134,29 +100,32 @@ with col1:
             summary_response = send_chat_request(selected_video_id, "Summary")
         if "Error" not in summary_response:
             st.success("Summary fetched successfully!")
-            st.components.v1.html(summary_response, height=500, scrolling=True)
+            st.markdown(summary_response, unsafe_allow_html=True)
         else:
             st.error(summary_response)
 
 # Quiz Me Button
 with col2:
     if st.button("Quiz Me"):
-        st.subheader("Quiz Me")
         with st.spinner("Fetching quiz..."):
             quiz_response = send_chat_request(selected_video_id, "Quiz Me")
         if "Error" not in quiz_response:
-            st.success("Quiz fetched successfully!")
-            st.markdown(quiz_response, unsafe_allow_html=True)
+            render_quiz(quiz_response)
         else:
             st.error(quiz_response)
 
 # Ask a Doubt Button
 with col3:
     if st.button("Ask a Doubt"):
-        st.subheader("Ask a Doubt")
-        st.info("Ask Doubt functionality will be implemented here.")
-
-st.markdown("</div>", unsafe_allow_html=True)
+        user_query = st.text_input("Ask your doubt here:")
+        if st.button("Submit Doubt"):
+            with st.spinner("Submitting your doubt..."):
+                doubt_response = send_chat_request(selected_video_id, "Ask a Doubt", query=user_query)
+            if "Error" not in doubt_response:
+                st.success("Doubt submitted successfully!")
+                st.markdown(doubt_response, unsafe_allow_html=True)
+            else:
+                st.error(doubt_response)
 
 # Footer
 st.sidebar.markdown("---")
