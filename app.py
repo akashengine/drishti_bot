@@ -5,7 +5,7 @@ import requests
 API_BASE_URL = "https://testing.drishtigpt.com/v1/chat-messages"
 API_KEY = st.secrets["API_KEY"]  # Securely retrieve API Key
 
-def send_chat_request(video_id, request_type, query=""):
+def send_chat_request(video_id, request_type, query="."):
     """
     Sends a request to the chat API with the given parameters.
     """
