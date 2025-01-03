@@ -11,7 +11,7 @@ if 'quiz_data' not in st.session_state:
     st.session_state.quiz_data = None
 if 'show_quiz' not in st.session_state:
     st.session_state.show_quiz = False
-    
+
 def fetch_new_quiz():
     st.session_state.show_quiz = True
     with st.spinner("Fetching quiz..."):
@@ -75,11 +75,11 @@ def render_quiz(quiz_data):
         return
 
     st.subheader("Quiz Me")
-    
+
     # Initialize session state for user answers if not exists
     if 'user_answers' not in st.session_state:
         st.session_state.user_answers = [None] * len(quiz_data)
-    
+
     # Initialize session state for quiz submission
     if 'quiz_submitted' not in st.session_state:
         st.session_state.quiz_submitted = False
@@ -92,12 +92,12 @@ def render_quiz(quiz_data):
             question["Option 3"],
             question["Option 4"],
         ]
-        
+
         # Use session state to store the selected answer
         answer_key = f"q_{idx}"
         if answer_key not in st.session_state:
             st.session_state[answer_key] = st.session_state.user_answers[idx-1]
-            
+
         selected_answer = st.radio(
             f"Select your answer for Question {idx}:",
             options,
@@ -112,7 +112,7 @@ def render_quiz(quiz_data):
     if st.session_state.quiz_submitted:
         st.markdown("### Quiz Results")
         total_correct = 0
-        
+
         for idx, (answer, question) in enumerate(zip(st.session_state.user_answers, quiz_data), start=1):
             is_correct = answer == question["Correct Answer"]
             if is_correct:
@@ -123,7 +123,7 @@ def render_quiz(quiz_data):
             st.markdown(f"**Your Answer:** {answer}")
             st.markdown(f"**Correct Answer:** {question['Correct Answer']}")
             st.markdown(f"**Explanation:** {question['Explanation']}")
-        
+
         # Display total score
         score_percentage = (total_correct / len(quiz_data)) * 100
         st.markdown(f"### Final Score: {total_correct}/{len(quiz_data)} ({score_percentage:.1f}%)")
@@ -180,7 +180,6 @@ st.markdown(f"""
 
 # Buttons for Actions
 st.markdown('<div class="tabs-container">', unsafe_allow_html=True)
-
 col1, col2, col3 = st.columns(3)
 
 # Summary Button
@@ -200,19 +199,18 @@ with col2:
     st.session_state.video_id = selected_video_id  # Store video_id in session state
     if st.button("Quiz Me"):
         fetch_new_quiz()
-        
+
     # Show quiz if it should be displayed
-    if st.session_state.show_quiz:
-        
-        if st.session_state.quiz_data:
-            render_quiz(st.session_state.quiz_data)
+    if st.session_state.show_quiz and st.session_state.quiz_data:
+        render_quiz(st.session_state.quiz_data)
 
 # Ask a Doubt section with embedded Dify chat
 with col3:
     if st.button("Ask a Doubt"):
         st.subheader("Ask a Doubt")
-        # Create HTML with iframe and script to pre-fill fields
-        dify_chat_html = f'''
+        
+        # --- We no longer use direct DOM access. Instead, we use postMessage. ---
+        dify_chat_html = f"""
             <iframe
                 id="difyFrame"
                 src="https://testing.drishtigpt.com/chat/g7l6cqexzdEJFhqD"
@@ -221,36 +219,23 @@ with col3:
                 frameborder="0"
                 allow="microphone"
                 style="border: 1px solid #ccc; border-radius: 8px;"
-                onload="prefillDifyForm()"
             ></iframe>
-            
+
             <script>
-                function prefillDifyForm() {{
-                    setTimeout(() => {{
-                        const frame = document.getElementById('difyFrame');
-                        if (frame && frame.contentWindow) {{
-                            // Pre-fill the Video ID input
-                            const videoInput = frame.contentDocument.querySelector('input[placeholder="Video ID"]');
-                            if (videoInput) {{
-                                videoInput.value = "{selected_video_id}";
-                                // Trigger input event to ensure proper form state update
-                                const event = new Event('input', {{ bubbles: true }});
-                                videoInput.dispatchEvent(event);
-                            }}
-                            
-                            // Set Request Type dropdown to "Ask a Doubt"
-                            const requestSelect = frame.contentDocument.querySelector('select');
-                            if (requestSelect) {{
-                                requestSelect.value = "Ask a Doubt";
-                                // Trigger change event to ensure proper form state update
-                                const event = new Event('change', {{ bubbles: true }});
-                                requestSelect.dispatchEvent(event);
-                            }}
-                        }}
-                    }}, 1000); // Give the iframe content time to load
-                }}
+                // Once the iframe loads, we send a postMessage to populate its fields
+                document.getElementById('difyFrame').onload = () => {{
+                    // The data we want to send
+                    const payload = {{
+                        video_id: "{selected_video_id}",
+                        request_type: "Ask a Doubt"
+                    }};
+
+                    // We'll post a message to the child iframe's window
+                    const iframe = document.getElementById('difyFrame');
+                    iframe.contentWindow.postMessage(payload, "https://testing.drishtigpt.com");
+                }};
             </script>
-        '''
+        """
         st.components.v1.html(dify_chat_html, height=650)
 
 st.markdown('</div>', unsafe_allow_html=True)
