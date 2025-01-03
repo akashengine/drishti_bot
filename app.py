@@ -36,7 +36,7 @@ def send_chat_request(video_id, request_type, query="."):
 # Streamlit App Layout
 st.set_page_config(page_title="DrishtiGPT", layout="wide")
 
-# CSS for Custom Styling
+# CSS for Styling
 st.markdown("""
     <style>
     .main-container {
@@ -52,55 +52,58 @@ st.markdown("""
         border: 1px solid #ccc;
         margin-bottom: 20px;
     }
-    .tabs-container {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
+    .action-button {
         position: fixed;
         bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-    }
-    .tabs-container button {
-        padding: 10px 20px;
-        font-size: 14px;
-        border: none;
-        cursor: pointer;
-        border-radius: 5px;
+        right: 50px;
+        width: 60px;
+        height: 60px;
+        border-radius: 30px;
         background-color: #007bff;
         color: white;
-    }
-    .tabs-container button:hover {
-        background-color: #0056b3;
-    }
-    .logo-container {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 20px;
-    }
-    .custom-header {
-        text-align: center;
-        margin-top: 20px;
         font-size: 24px;
         font-weight: bold;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
     }
-    .sidebar {
-        margin-top: 20px;
+    .menu {
+        position: fixed;
+        bottom: 90px;
+        right: 50px;
+        background-color: white;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .menu button {
+        border: none;
+        background: none;
+        padding: 10px;
+        text-align: left;
+        cursor: pointer;
+        font-size: 16px;
+    }
+    .menu button:hover {
+        background-color: #f0f0f0;
+    }
+    .chat-input {
+        position: fixed;
+        bottom: 20px;
+        right: 120px;
+        width: 300px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Logo
-st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-st.image("https://drishtigpt.com/upload/images/logo/ZqUG-dashboard-2x-drishtigpt-logo.svg", width=200)
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Sidebar for Video Selection
+# Sidebar
 st.sidebar.title("DrishtiGPT")
-st.sidebar.markdown('<div class="sidebar">', unsafe_allow_html=True)
 video_ids = ["7781", "7782", "7783"]  # Dummy Video IDs
 selected_video_id = st.sidebar.selectbox("Select Video ID", video_ids)
-st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
 # Main Content
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
@@ -110,28 +113,29 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Buttons for Actions
-st.markdown('<div class="tabs-container">', unsafe_allow_html=True)
+# Toggle Menu State
+if "menu_visible" not in st.session_state:
+    st.session_state.menu_visible = False
 
-col1, col2, col3 = st.columns(3)
+# Toggle Menu Visibility
+def toggle_menu():
+    st.session_state.menu_visible = not st.session_state.menu_visible
 
-# Summary Button
-with col1:
+# Action Button
+st.markdown('<div class="action-button" onclick="toggleMenu()">+</div>', unsafe_allow_html=True)
+
+# Pop-Up Menu
+if st.session_state.menu_visible:
+    st.markdown('<div class="menu">', unsafe_allow_html=True)
     if st.button("Summary"):
-        st.subheader("Video Summary")
         with st.spinner("Fetching summary..."):
             summary_response = send_chat_request(selected_video_id, "Summary")
         if "Error" not in summary_response:
             st.success("Summary fetched successfully!")
-            # Render HTML if present in the response
             st.components.v1.html(summary_response, height=500, scrolling=True)
         else:
             st.error(summary_response)
-
-# Quiz Me Button
-with col2:
     if st.button("Quiz Me"):
-        st.subheader("Quiz Me")
         with st.spinner("Fetching quiz..."):
             quiz_response = send_chat_request(selected_video_id, "Quiz")
         if "Error" not in quiz_response:
@@ -139,15 +143,12 @@ with col2:
             st.markdown(quiz_response, unsafe_allow_html=True)
         else:
             st.error(quiz_response)
+    if st.button("Ask a Question"):
+        st.info("Ask a Question functionality coming soon.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# Placeholder for Ask a Question
-with col3:
-    if st.button("Ask a Doubt"):
-        st.subheader("Ask a Doubt")
-        st.info("Ask Doubt functionality will be implemented here.")
+# Chat Input
+user_query = st.text_input("Ask me anything", placeholder="Type your query...", key="chat_input", label_visibility="collapsed")
+if st.button("Send", key="send_button"):
+    st.info(f"You asked: {user_query}")
 
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Footer
-st.sidebar.markdown("---")
-st.sidebar.markdown("Developed by DrishtiGPT Team")
