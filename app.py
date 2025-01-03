@@ -207,11 +207,22 @@ with col2:
         if st.session_state.quiz_data:
             render_quiz(st.session_state.quiz_data)
 
-# Placeholder for Ask a Question
+# Ask a Doubt section with embedded Dify chat
 with col3:
     if st.button("Ask a Doubt"):
         st.subheader("Ask a Doubt")
-        st.info("Ask Doubt functionality will be implemented here.")
+        # Create the iframe HTML with pre-filled parameters
+        dify_chat_html = f'''
+            <iframe
+                src="https://testing.drishtigpt.com/chat/new?video_id={selected_video_id}&request_type=Ask+a+Doubt"
+                width="100%"
+                height="600px"
+                frameborder="0"
+                allow="microphone"
+                style="border: 1px solid #ccc; border-radius: 8px;"
+            ></iframe>
+        '''
+        st.components.v1.html(dify_chat_html, height=650)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
