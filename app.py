@@ -52,10 +52,22 @@ st.markdown("""
         border: 1px solid #ccc;
         margin-bottom: 20px;
     }
-    .action-button {
+    .action-container {
         position: fixed;
         bottom: 20px;
-        right: 50px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+    }
+    .chat-input {
+        width: 300px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-right: 10px;
+    }
+    .action-button {
         width: 60px;
         height: 60px;
         border-radius: 30px;
@@ -71,7 +83,8 @@ st.markdown("""
     .menu {
         position: fixed;
         bottom: 90px;
-        right: 50px;
+        left: 50%;
+        transform: translateX(-50%);
         background-color: white;
         box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
         border-radius: 10px;
@@ -91,12 +104,6 @@ st.markdown("""
     .menu button:hover {
         background-color: #f0f0f0;
     }
-    .chat-input {
-        position: fixed;
-        bottom: 20px;
-        right: 120px;
-        width: 300px;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -113,7 +120,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Toggle Menu State
+# Initialize Menu State
 if "menu_visible" not in st.session_state:
     st.session_state.menu_visible = False
 
@@ -121,8 +128,17 @@ if "menu_visible" not in st.session_state:
 def toggle_menu():
     st.session_state.menu_visible = not st.session_state.menu_visible
 
+# Input and Toggle Button
+st.markdown('<div class="action-container">', unsafe_allow_html=True)
+
+# Chat Input
+user_query = st.text_input("", placeholder="Type your query...", key="chat_input", label_visibility="collapsed", help="Ask your question here!")
+
 # Action Button
-st.markdown('<div class="action-button" onclick="toggleMenu()">+</div>', unsafe_allow_html=True)
+if st.button("+", key="toggle_button"):
+    toggle_menu()
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # Pop-Up Menu
 if st.session_state.menu_visible:
@@ -146,9 +162,3 @@ if st.session_state.menu_visible:
     if st.button("Ask a Question"):
         st.info("Ask a Question functionality coming soon.")
     st.markdown('</div>', unsafe_allow_html=True)
-
-# Chat Input
-user_query = st.text_input("Ask me anything", placeholder="Type your query...", key="chat_input", label_visibility="collapsed")
-if st.button("Send", key="send_button"):
-    st.info(f"You asked: {user_query}")
-
