@@ -19,7 +19,7 @@ def send_chat_request(video_id, request_type, query="."):
             "query": query,
             "inputs": {
                 "video_id": video_id,
-                "request_type": request_type,
+                "request_type": request_type
             },
             "response_mode": "blocking",
             "conversation_id": "",
@@ -41,7 +41,7 @@ def render_quiz(quiz_data):
     """
     if isinstance(quiz_data, str):
         try:
-            quiz_data = eval(quiz_data)  # Convert JSON string to Python dictionary
+            quiz_data = eval(quiz_data)  # Convert JSON string to Python list
         except Exception as e:
             st.error(f"Invalid quiz data format: {e}")
             return
@@ -62,9 +62,13 @@ def render_quiz(quiz_data):
             options,
             key=f"q_{idx}",
         )
-        user_answers.append({"user_answer": user_answer, "correct_answer": question["Correct Answer"], "explanation": question["Explanation"]})
+        user_answers.append({
+            "user_answer": user_answer,
+            "correct_answer": question["Correct Answer"],
+            "explanation": question["Explanation"]
+        })
 
-    if st.button("Submit"):
+    if st.button("Submit Quiz"):
         st.markdown("### Quiz Results")
         for idx, answer in enumerate(user_answers, start=1):
             if answer["user_answer"] == answer["correct_answer"]:
@@ -79,16 +83,55 @@ def render_quiz(quiz_data):
 # Streamlit App Layout
 st.set_page_config(page_title="DrishtiGPT", layout="wide")
 
+# CSS for Custom Styling
+st.markdown("""
+    <style>
+    .main-container {
+        max-width: 800px;
+        margin: auto;
+    }
+    .video-placeholder {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 300px;
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
+    }
+    .logo-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    .sidebar {
+        margin-top: 20px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Logo
+st.markdown('<div class="logo-container">', unsafe_allow_html=True)
+st.image("https://drishtigpt.com/upload/images/logo/ZqUG-dashboard-2x-drishtigpt-logo.svg", width=200)
+st.markdown('</div>', unsafe_allow_html=True)
+
 # Sidebar for Video Selection
 st.sidebar.title("DrishtiGPT")
+st.sidebar.markdown('<div class="sidebar">', unsafe_allow_html=True)
 video_ids = ["7781", "7782", "7783"]  # Dummy Video IDs
 selected_video_id = st.sidebar.selectbox("Select Video ID", video_ids)
+st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
 # Main Content
-st.markdown(f"## Video Placeholder - Video ID: {selected_video_id}")
+st.markdown('<div class="main-container">', unsafe_allow_html=True)
+st.markdown(f"""
+    <div class="video-placeholder">
+        <p>Video Placeholder - Video ID: {selected_video_id}</p>
+    </div>
+""", unsafe_allow_html=True)
 
 # Buttons for Actions
-st.markdown("### Actions")
+st.markdown('<div class="tabs-container">', unsafe_allow_html=True)
 
 col1, col2, col3 = st.columns(3)
 
@@ -100,32 +143,31 @@ with col1:
             summary_response = send_chat_request(selected_video_id, "Summary")
         if "Error" not in summary_response:
             st.success("Summary fetched successfully!")
-            st.markdown(summary_response, unsafe_allow_html=True)
+            st.components.v1.html(summary_response, height=500, scrolling=True)
         else:
             st.error(summary_response)
 
 # Quiz Me Button
 with col2:
     if st.button("Quiz Me"):
+        st.subheader("Quiz Me")
         with st.spinner("Fetching quiz..."):
             quiz_response = send_chat_request(selected_video_id, "Quiz Me")
         if "Error" not in quiz_response:
-            render_quiz(quiz_response)
+            try:
+                render_quiz(eval(quiz_response))
+            except Exception as e:
+                st.error(f"Invalid quiz format: {e}")
         else:
             st.error(quiz_response)
 
-# Ask a Doubt Button
+# Placeholder for Ask a Question
 with col3:
     if st.button("Ask a Doubt"):
-        user_query = st.text_input("Ask your doubt here:")
-        if st.button("Submit Doubt"):
-            with st.spinner("Submitting your doubt..."):
-                doubt_response = send_chat_request(selected_video_id, "Ask a Doubt", query=user_query)
-            if "Error" not in doubt_response:
-                st.success("Doubt submitted successfully!")
-                st.markdown(doubt_response, unsafe_allow_html=True)
-            else:
-                st.error(doubt_response)
+        st.subheader("Ask a Doubt")
+        st.info("Ask Doubt functionality will be implemented here.")
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # Footer
 st.sidebar.markdown("---")
