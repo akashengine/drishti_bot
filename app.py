@@ -36,16 +36,18 @@ def send_chat_request(video_id, request_type, query="."):
         return f"An error occurred: {e}"
 
 
-def parse_quiz_data(raw_data):
+def preprocess_quiz_data(raw_data):
     """
-    Parses raw quiz JSON data, handling errors gracefully.
+    Preprocesses raw quiz JSON string to convert it into a valid list of JSON objects.
     """
     try:
-        # Handle cases where JSON is improperly formatted
-        data = json.loads(f"[{raw_data.replace('}{', '},{')}]")
-        return data
+        # Split the string into individual JSON objects and wrap them in an array
+        raw_data = raw_data.replace("\n", "").replace("}{", "},{")
+        formatted_data = f"[{raw_data}]"
+        quiz_data = json.loads(formatted_data)
+        return quiz_data
     except Exception as e:
-        st.error(f"Failed to parse quiz data: {e}")
+        st.error(f"Failed to preprocess quiz data: {e}")
         return None
 
 
@@ -165,7 +167,7 @@ with col2:
         with st.spinner("Fetching quiz..."):
             quiz_response = send_chat_request(selected_video_id, "Quiz Me")
         if "Error" not in quiz_response:
-            parsed_data = parse_quiz_data(quiz_response)
+            parsed_data = preprocess_quiz_data(quiz_response)
             render_quiz(parsed_data)
         else:
             st.error(quiz_response)
