@@ -11,7 +11,6 @@ def fetch_summary(video_id, user_id="unique-user-id"):
     Fetches the summary of the selected video from the API.
     """
     try:
-        # API Request
         headers = {
             "Authorization": f"Bearer {API_KEY}",
             "Content-Type": "application/json",
@@ -24,12 +23,10 @@ def fetch_summary(video_id, user_id="unique-user-id"):
             "user": user_id,
         }
         response = requests.post(API_BASE_URL, headers=headers, json=payload)
-        
-        # Check for response status
+
         if response.status_code == 200:
             return response.json().get("answer", "No summary available.")
         else:
-            # Raise an exception for non-200 status codes
             return f"Error: {response.status_code} - {response.json().get('message', response.text)}"
     except Exception as e:
         return f"An error occurred: {e}"
@@ -55,11 +52,12 @@ st.markdown("""
     }
     .tabs-container {
         display: flex;
-        justify-content: flex-end;
-        gap: 10px;
+        justify-content: center;
+        gap: 20px;
         position: fixed;
         bottom: 20px;
-        right: 20px;
+        left: 50%;
+        transform: translateX(-50%);
     }
     .tabs-container button {
         padding: 10px 20px;
@@ -78,6 +76,15 @@ st.markdown("""
         justify-content: center;
         margin-bottom: 20px;
     }
+    .custom-header {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 24px;
+        font-weight: bold;
+    }
+    .sidebar {
+        margin-top: 20px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -88,37 +95,44 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # Sidebar for Video Selection
 st.sidebar.title("DrishtiGPT")
+st.sidebar.markdown('<div class="sidebar">', unsafe_allow_html=True)
 video_ids = ["7781", "7782", "7783"]  # Dummy Video IDs
 selected_video_id = st.sidebar.selectbox("Select Video ID", video_ids)
+st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
 # Main Content
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
-st.markdown("""
+st.markdown(f"""
     <div class="video-placeholder">
-        <p>Video Placeholder - Video ID: {}</p>
+        <p>Video Placeholder - Video ID: {selected_video_id}</p>
     </div>
-""".format(selected_video_id), unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# Bottom Tabs
+# Buttons for Actions
 st.markdown('<div class="tabs-container">', unsafe_allow_html=True)
 
-if st.button("Summary"):
-    st.subheader("Video Summary")
-    with st.spinner("Fetching summary..."):
-        summary_response = fetch_summary(selected_video_id)
-    if "Error" not in summary_response:
-        st.success("Summary fetched successfully!")
-        st.markdown(summary_response)
-    else:
-        st.error(summary_response)
+col1, col2, col3 = st.columns(3)
 
-if st.button("Quiz Me"):
-    st.subheader("Quiz Me")
-    st.info("Quiz functionality will be implemented here.")
+with col1:
+    if st.button("Summary"):
+        st.subheader("Video Summary")
+        with st.spinner("Fetching summary..."):
+            summary_response = fetch_summary(selected_video_id)
+        if "Error" not in summary_response:
+            st.success("Summary fetched successfully!")
+            st.markdown(summary_response)
+        else:
+            st.error(summary_response)
 
-if st.button("Ask a Question"):
-    st.subheader("Ask a Question")
-    st.info("Question functionality will be implemented here.")
+with col2:
+    if st.button("Quiz Me"):
+        st.subheader("Quiz Me")
+        st.info("Quiz functionality will be implemented here.")
+
+with col3:
+    if st.button("Ask a Doubt"):
+        st.subheader("Ask a Doubt")
+        st.info("Ask Doubt functionality will be implemented here.")
 
 st.markdown('</div>', unsafe_allow_html=True)
 
