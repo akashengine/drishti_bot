@@ -183,18 +183,25 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.sidebar.title("DrishtiGPT")
 st.sidebar.markdown('<div class="sidebar">', unsafe_allow_html=True)
 
-# Dummy Video IDs
+# Sample Video IDs
 video_ids = ["7781", "11853", "7783"]
 selected_video_id = st.sidebar.selectbox("Select Video ID", video_ids)
 st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-# Store the video_id in session state for later use
+# Store the video_id in session state
 st.session_state.video_id = selected_video_id
 
 # Main Content
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
 # --- Video Embed ---
+#
+# For each video_id, the page is: 
+#   https://console.frontbencher.in/flm/video-player-iframe-OJ5fnQP8q7Z8X1EhbH7Fvthdc74vbfy9/{video_id}
+#
+# We embed it via an <iframe>. 
+# NOTE: If the video still doesn’t play, the site may be blocking cross-origin iFrame usage.
+#
 st.markdown(f"""
     <div class="video-placeholder">
         <iframe 
@@ -206,7 +213,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Buttons for Actions
+# Action Buttons
 st.markdown('<div class="tabs-container">', unsafe_allow_html=True)
 col1, col2, col3 = st.columns(3)
 
@@ -221,7 +228,6 @@ with col1:
         
         if "Error" not in summary_response:
             st.success("Summary fetched successfully!")
-            # Display the raw summary (no timestamp link logic)
             st.markdown(summary_response)
         else:
             st.error(summary_response)
@@ -244,7 +250,7 @@ with col3:
     if st.button("Ask a Doubt"):
         st.subheader("Ask a Doubt")
         
-        # --- We no longer use direct DOM access. Instead, we use postMessage. ---
+        # Instead of direct DOM access, we use postMessage to pass data to the embedded page
         dify_chat_html = f"""
             <iframe
                 id="difyFrame"
@@ -257,15 +263,11 @@ with col3:
             ></iframe>
 
             <script>
-                // Once the iframe loads, we send a postMessage to populate its fields
                 document.getElementById('difyFrame').onload = () => {{
-                    // The data we want to send
                     const payload = {{
                         video_id: "{selected_video_id}",
                         request_type: "Ask a Doubt"
                     }};
-
-                    // We'll post a message to the child iframe's window
                     const iframe = document.getElementById('difyFrame');
                     iframe.contentWindow.postMessage(payload, "https://testing.drishtigpt.com");
                 }};
