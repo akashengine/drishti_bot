@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
 import json
-import re
 
 # -------------------------------------------------------------
 # API Configuration
@@ -55,28 +54,6 @@ def preprocess_quiz_data(raw_data):
     except Exception as e:
         st.error(f"Failed to preprocess quiz data: {e}")
         return None
-
-
-def transform_summary_timestamps(summary_text, video_id):
-    """
-    Replaces occurrences of:
-       Time: HH:MM:SS – HH:MM:SS
-    with clickable links that include '?time=HH:MM:SS' for the start time.
-    """
-    # Regex pattern to match "Time: HH:MM:SS – HH:MM:SS"
-    pattern = r"Time:\s*(\d{2}:\d{2}:\d{2})\s*–\s*(\d{2}:\d{2}:\d{2})"
-    
-    def _replace(match):
-        start_time = match.group(1)
-        end_time = match.group(2)
-        # You could link both start and end times separately, but commonly we jump to start_time.
-        return (
-            f"**Time:** "
-            f"[{start_time} – {end_time}]"
-            f"(https://console.frontbencher.in/flm/video-player-iframe-OJ5fnQP8q7Z8X1EhbH7Fvthdc74vbfy9/{video_id}?time={start_time})"
-        )
-    
-    return re.sub(pattern, _replace, summary_text)
 
 
 # -------------------------------------------------------------
@@ -225,8 +202,7 @@ st.markdown(f"""
             width="800"
             height="450"
             allowfullscreen
-        >
-        </iframe>
+        ></iframe>
     </div>
 """, unsafe_allow_html=True)
 
@@ -244,12 +220,9 @@ with col1:
             summary_response = send_chat_request(selected_video_id, "Summary")
         
         if "Error" not in summary_response:
-            # Transform the summary to include clickable timestamps
-            summary_with_links = transform_summary_timestamps(summary_response, selected_video_id)
             st.success("Summary fetched successfully!")
-            
-            # Display the final summary with clickable timestamps
-            st.markdown(summary_with_links, unsafe_allow_html=True)
+            # Display the raw summary (no timestamp link logic)
+            st.markdown(summary_response)
         else:
             st.error(summary_response)
 
