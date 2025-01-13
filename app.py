@@ -1,29 +1,18 @@
 import streamlit as st
 import requests
 import json
+import re
 
+# -------------------------------------------------------------
 # API Configuration
+# -------------------------------------------------------------
 API_BASE_URL = "https://testing.drishtigpt.com/v1/chat-messages"
 API_KEY = st.secrets["API_KEY"]  # Securely retrieve API Key
 
-# Initialize session state variables
-if 'quiz_data' not in st.session_state:
-    st.session_state.quiz_data = None
-if 'show_quiz' not in st.session_state:
-    st.session_state.show_quiz = False
 
-def fetch_new_quiz():
-    st.session_state.show_quiz = True
-    with st.spinner("Fetching quiz..."):
-        quiz_response = send_chat_request(st.session_state.video_id, "Quiz Me")
-    if "Error" not in quiz_response:
-        st.session_state.quiz_data = preprocess_quiz_data(quiz_response)
-        st.session_state.quiz_submitted = False
-        if 'user_answers' in st.session_state:
-            del st.session_state.user_answers
-    else:
-        st.error(quiz_response)
-
+# -------------------------------------------------------------
+# Helper Functions
+# -------------------------------------------------------------
 def send_chat_request(video_id, request_type, query="."):
     """
     Sends a request to the chat API with the given parameters.
@@ -52,6 +41,7 @@ def send_chat_request(video_id, request_type, query="."):
     except Exception as e:
         return f"An error occurred: {e}"
 
+
 def preprocess_quiz_data(raw_data):
     """
     Preprocesses raw quiz JSON string to convert it into a valid list of JSON objects.
@@ -65,6 +55,45 @@ def preprocess_quiz_data(raw_data):
     except Exception as e:
         st.error(f"Failed to preprocess quiz data: {e}")
         return None
+
+
+def transform_summary_timestamps(summary_text, video_id):
+    """
+    Replaces occurrences of:
+       Time: HH:MM:SS – HH:MM:SS
+    with clickable links that include '?time=HH:MM:SS' for the start time.
+    """
+    # Regex pattern to match "Time: HH:MM:SS – HH:MM:SS"
+    pattern = r"Time:\s*(\d{2}:\d{2}:\d{2})\s*–\s*(\d{2}:\d{2}:\d{2})"
+    
+    def _replace(match):
+        start_time = match.group(1)
+        end_time = match.group(2)
+        # You could link both start and end times separately, but commonly we jump to start_time.
+        return (
+            f"**Time:** "
+            f"[{start_time} – {end_time}]"
+            f"(https://console.frontbencher.in/flm/video-player-iframe-OJ5fnQP8q7Z8X1EhbH7Fvthdc74vbfy9/{video_id}?time={start_time})"
+        )
+    
+    return re.sub(pattern, _replace, summary_text)
+
+
+# -------------------------------------------------------------
+# Quiz-Related Functions
+# -------------------------------------------------------------
+def fetch_new_quiz():
+    st.session_state.show_quiz = True
+    with st.spinner("Fetching quiz..."):
+        quiz_response = send_chat_request(st.session_state.video_id, "Quiz Me")
+    if "Error" not in quiz_response:
+        st.session_state.quiz_data = preprocess_quiz_data(quiz_response)
+        st.session_state.quiz_submitted = False
+        if 'user_answers' in st.session_state:
+            del st.session_state.user_answers
+    else:
+        st.error(quiz_response)
+
 
 def render_quiz(quiz_data):
     """
@@ -128,7 +157,10 @@ def render_quiz(quiz_data):
         score_percentage = (total_correct / len(quiz_data)) * 100
         st.markdown(f"### Final Score: {total_correct}/{len(quiz_data)} ({score_percentage:.1f}%)")
 
+
+# -------------------------------------------------------------
 # Streamlit App Layout
+# -------------------------------------------------------------
 st.set_page_config(page_title="DrishtiGPT", layout="wide")
 
 # CSS for Custom Styling
@@ -142,9 +174,6 @@ st.markdown("""
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 300px;
-        background-color: #f0f0f0;
-        border: 1px solid #ccc;
         margin-bottom: 20px;
     }
     .logo-container {
@@ -155,8 +184,18 @@ st.markdown("""
     .sidebar {
         margin-top: 20px;
     }
+    iframe {
+        border: 1px solid #ccc; 
+        border-radius: 8px;
+    }
     </style>
 """, unsafe_allow_html=True)
+
+# Initialize session state variables
+if 'quiz_data' not in st.session_state:
+    st.session_state.quiz_data = None
+if 'show_quiz' not in st.session_state:
+    st.session_state.show_quiz = False
 
 # Logo
 st.markdown('<div class="logo-container">', unsafe_allow_html=True)
@@ -166,15 +205,28 @@ st.markdown('</div>', unsafe_allow_html=True)
 # Sidebar for Video Selection
 st.sidebar.title("DrishtiGPT")
 st.sidebar.markdown('<div class="sidebar">', unsafe_allow_html=True)
-video_ids = ["7781", "7782", "7783"]  # Dummy Video IDs
+
+# Dummy Video IDs
+video_ids = ["7781", "7782", "7783"]
 selected_video_id = st.sidebar.selectbox("Select Video ID", video_ids)
 st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
+# Store the video_id in session state for later use
+st.session_state.video_id = selected_video_id
+
 # Main Content
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
+
+# --- Video Embed ---
 st.markdown(f"""
     <div class="video-placeholder">
-        <p>Video Placeholder - Video ID: {selected_video_id}</p>
+        <iframe 
+            src="https://console.frontbencher.in/flm/video-player-iframe-OJ5fnQP8q7Z8X1EhbH7Fvthdc74vbfy9/{selected_video_id}"
+            width="800"
+            height="450"
+            allowfullscreen
+        >
+        </iframe>
     </div>
 """, unsafe_allow_html=True)
 
@@ -182,21 +234,29 @@ st.markdown(f"""
 st.markdown('<div class="tabs-container">', unsafe_allow_html=True)
 col1, col2, col3 = st.columns(3)
 
-# Summary Button
+# -------------------------------------------------------------
+# 1. Summary Button
+# -------------------------------------------------------------
 with col1:
     if st.button("Summary"):
         st.subheader("Video Summary")
         with st.spinner("Fetching summary..."):
             summary_response = send_chat_request(selected_video_id, "Summary")
+        
         if "Error" not in summary_response:
+            # Transform the summary to include clickable timestamps
+            summary_with_links = transform_summary_timestamps(summary_response, selected_video_id)
             st.success("Summary fetched successfully!")
-            st.components.v1.html(summary_response, height=500, scrolling=True)
+            
+            # Display the final summary with clickable timestamps
+            st.markdown(summary_with_links, unsafe_allow_html=True)
         else:
             st.error(summary_response)
 
-# Quiz Me Button
+# -------------------------------------------------------------
+# 2. Quiz Me Button
+# -------------------------------------------------------------
 with col2:
-    st.session_state.video_id = selected_video_id  # Store video_id in session state
     if st.button("Quiz Me"):
         fetch_new_quiz()
 
@@ -204,7 +264,9 @@ with col2:
     if st.session_state.show_quiz and st.session_state.quiz_data:
         render_quiz(st.session_state.quiz_data)
 
-# Ask a Doubt section with embedded Dify chat
+# -------------------------------------------------------------
+# 3. Ask a Doubt
+# -------------------------------------------------------------
 with col3:
     if st.button("Ask a Doubt"):
         st.subheader("Ask a Doubt")
