@@ -8,7 +8,6 @@ import json
 API_BASE_URL = "https://testing.drishtigpt.com/v1/chat-messages"
 API_KEY = st.secrets["API_KEY"]  # Securely retrieve API Key
 
-
 # -------------------------------------------------------------
 # Helper Functions
 # -------------------------------------------------------------
@@ -55,7 +54,6 @@ def preprocess_quiz_data(raw_data):
         st.error(f"Failed to preprocess quiz data: {e}")
         return None
 
-
 # -------------------------------------------------------------
 # Quiz-Related Functions
 # -------------------------------------------------------------
@@ -70,7 +68,6 @@ def fetch_new_quiz():
             del st.session_state.user_answers
     else:
         st.error(quiz_response)
-
 
 def render_quiz(quiz_data):
     """
@@ -134,7 +131,6 @@ def render_quiz(quiz_data):
         score_percentage = (total_correct / len(quiz_data)) * 100
         st.markdown(f"### Final Score: {total_correct}/{len(quiz_data)} ({score_percentage:.1f}%)")
 
-
 # -------------------------------------------------------------
 # Streamlit App Layout
 # -------------------------------------------------------------
@@ -195,13 +191,6 @@ st.session_state.video_id = selected_video_id
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
 # --- Video Embed ---
-#
-# For each video_id, the page is: 
-#   https://console.frontbencher.in/flm/video-player-iframe-OJ5fnQP8q7Z8X1EhbH7Fvthdc74vbfy9/{video_id}
-#
-# We embed it via an <iframe>. 
-# NOTE: If the video still doesn’t play, the site may be blocking cross-origin iFrame usage.
-#
 st.markdown(f"""
     <div class="video-placeholder">
         <iframe 
@@ -209,6 +198,8 @@ st.markdown(f"""
             width="800"
             height="450"
             allowfullscreen
+            allow="accelerometer; ambient-light-sensor; autoplay; battery; camera; clipboard-write; document-domain; encrypted-media; fullscreen; geolocation; gyroscope; layout-animations; legacy-image-formats; magnetometer; microphone; midi; oversized-images; payment; picture-in-picture; publickey-credentials-get; sync-xhr; usb; vr ; wake-lock; xr-spatial-tracking"
+            sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads"
         ></iframe>
     </div>
 """, unsafe_allow_html=True)
@@ -250,7 +241,6 @@ with col3:
     if st.button("Ask a Doubt"):
         st.subheader("Ask a Doubt")
         
-        # Instead of direct DOM access, we use postMessage to pass data to the embedded page
         dify_chat_html = f"""
             <iframe
                 id="difyFrame"
@@ -258,20 +248,10 @@ with col3:
                 width="100%"
                 height="600px"
                 frameborder="0"
-                allow="microphone"
+                allow="accelerometer; ambient-light-sensor; autoplay; battery; camera; clipboard-write; document-domain; encrypted-media; fullscreen; geolocation; gyroscope; layout-animations; legacy-image-formats; magnetometer; microphone; midi; oversized-images; payment; picture-in-picture; publickey-credentials-get; sync-xhr; usb; vr ; wake-lock; xr-spatial-tracking"
+                sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads"
                 style="border: 1px solid #ccc; border-radius: 8px;"
             ></iframe>
-
-            <script>
-                document.getElementById('difyFrame').onload = () => {{
-                    const payload = {{
-                        video_id: "{selected_video_id}",
-                        request_type: "Ask a Doubt"
-                    }};
-                    const iframe = document.getElementById('difyFrame');
-                    iframe.contentWindow.postMessage(payload, "https://testing.drishtigpt.com");
-                }};
-            </script>
         """
         st.components.v1.html(dify_chat_html, height=650)
 
