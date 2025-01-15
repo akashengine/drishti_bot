@@ -52,11 +52,23 @@ def preprocess_quiz_data(raw_data):
         # Parse each quiz item string into a dictionary
         quiz_data = []
         for quiz_item in quiz_list:
-            # Remove any escaped newlines for cleaner display
-            cleaned_item = quiz_item.replace('\\n', '')
-            # Parse the JSON string into a dictionary
-            quiz_dict = json.loads(cleaned_item)
-            quiz_data.append(quiz_dict)
+            try:
+                # Clean up the JSON string
+                # Remove escaped newlines and extra whitespace
+                cleaned_item = quiz_item.strip()
+                # Remove any remaining escaped characters
+                cleaned_item = cleaned_item.encode().decode('unicode_escape')
+                # Parse the JSON string into a dictionary
+                quiz_dict = json.loads(cleaned_item)
+                quiz_data.append(quiz_dict)
+            except json.JSONDecodeError as je:
+                st.error(f"Failed to parse quiz item: {je}")
+                st.error(f"Problematic item: {quiz_item[:200]}...")
+                continue
+            
+        if not quiz_data:
+            st.error("No quiz questions could be parsed successfully")
+            return None
             
         return quiz_data
     except Exception as e:
@@ -73,10 +85,24 @@ def fetch_new_quiz():
     with st.spinner("Fetching quiz..."):
         quiz_response = send_chat_request(st.session_state.video_id, "Quiz Me")
     if "Error" not in quiz_response:
-        st.session_state.quiz_data = preprocess_quiz_data(quiz_response)
-        st.session_state.quiz_submitted = False
-        if 'user_answers' in st.session_state:
-            del st.session_state.user_answers
+        # Add debug output
+        st.write("Debug: Raw API Response")
+        with st.expander("Show raw response"):
+            st.code(quiz_response)
+            
+        processed_data = preprocess_quiz_data(quiz_response)
+        if processed_data:
+            st.session_state.quiz_data = processed_data
+            st.session_state.quiz_submitted = False
+            if 'user_answers' in st.session_state:
+                del st.session_state.user_answers
+            
+            # Add debug output for processed data
+            st.write("Debug: Processed Quiz Data")
+            with st.expander("Show processed data"):
+                st.json(processed_data)
+        else:
+            st.error("Failed to process quiz data")
     else:
         st.error(quiz_response)
 
