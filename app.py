@@ -45,10 +45,8 @@ def preprocess_quiz_data(raw_data):
     Preprocesses raw quiz JSON string to convert it into a valid list of JSON objects.
     """
     try:
-        # Split the string into individual JSON objects and wrap them in an array
-        raw_data = raw_data.replace("\n", "").replace("}{", "},{")
-        formatted_data = f"[{raw_data}]"
-        quiz_data = json.loads(formatted_data)
+        # Parse the raw string directly into a list of dictionaries
+        quiz_data = [json.loads(item) for item in eval(raw_data)]
         return quiz_data
     except Exception as e:
         st.error(f"Failed to preprocess quiz data: {e}")
@@ -117,14 +115,15 @@ def render_quiz(quiz_data):
         total_correct = 0
 
         for idx, (answer, question) in enumerate(zip(st.session_state.user_answers, quiz_data), start=1):
-            is_correct = answer == question["Correct Answer"]
+            correct_answer = question["Correct Answer"].split(":")[1].strip() if ":" in question["Correct Answer"] else question["Correct Answer"]
+            is_correct = answer == correct_answer
             if is_correct:
                 total_correct += 1
                 st.success(f"✅ Question {idx}: Correct")
             else:
                 st.error(f"❌ Question {idx}: Incorrect")
             st.markdown(f"**Your Answer:** {answer}")
-            st.markdown(f"**Correct Answer:** {question['Correct Answer']}")
+            st.markdown(f"**Correct Answer:** {correct_answer}")
             st.markdown(f"**Explanation:** {question['Explanation']}")
 
         # Display total score
