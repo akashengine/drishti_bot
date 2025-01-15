@@ -43,27 +43,34 @@ def send_chat_request(video_id, request_type, query="."):
 def preprocess_quiz_data(raw_data):
     """
     Preprocesses the quiz data from the API response into a list of dictionaries.
-    Handles the Python list string format from the API response.
+    Handles multiple JSON objects within each string and proper newline handling.
     """
     try:
         # Convert string representation of list to actual list using ast.literal_eval
-        quiz_list = ast.literal_eval(raw_data)
+        raw_items = ast.literal_eval(raw_data)
         
         # Parse each quiz item string into a dictionary
         quiz_data = []
-        for quiz_item in quiz_list:
+        for raw_item in raw_items:
             try:
-                # Clean up the JSON string
-                # Remove escaped newlines and extra whitespace
-                cleaned_item = quiz_item.strip()
-                # Remove any remaining escaped characters
-                cleaned_item = cleaned_item.encode().decode('unicode_escape')
-                # Parse the JSON string into a dictionary
-                quiz_dict = json.loads(cleaned_item)
-                quiz_data.append(quiz_dict)
+                # Split the string into individual JSON objects
+                json_objects = raw_item.strip().split('\n\n')
+                
+                for json_obj in json_objects:
+                    if not json_obj.strip():
+                        continue
+                        
+                    # Clean up the JSON string
+                    cleaned_item = json_obj.strip()
+                    # Remove any remaining escaped characters
+                    cleaned_item = cleaned_item.encode().decode('unicode_escape')
+                    # Parse the JSON string into a dictionary
+                    quiz_dict = json.loads(cleaned_item)
+                    quiz_data.append(quiz_dict)
+                    
             except json.JSONDecodeError as je:
                 st.error(f"Failed to parse quiz item: {je}")
-                st.error(f"Problematic item: {quiz_item[:200]}...")
+                st.error(f"Problematic item: {raw_item[:200]}...")
                 continue
             
         if not quiz_data:
@@ -115,6 +122,7 @@ def render_quiz(quiz_data):
         return
 
     st.subheader("Quiz Me")
+    st.info(f"Successfully loaded {len(quiz_data)} questions")
 
     # Initialize session state for user answers if not exists
     if 'user_answers' not in st.session_state:
@@ -124,53 +132,68 @@ def render_quiz(quiz_data):
     if 'quiz_submitted' not in st.session_state:
         st.session_state.quiz_submitted = False
 
-    for idx, question in enumerate(quiz_data, start=1):
-        st.markdown(f"### {idx}. {question['Question']}")
-        options = [
-            question["Option 1"],
-            question["Option 2"],
-            question["Option 3"],
-            question["Option 4"],
-        ]
+    # Create a container for the quiz
+    quiz_container = st.container()
+    
+    with quiz_container:
+        for idx, question in enumerate(quiz_data, start=1):
+            st.markdown(f"### Question {idx}")
+            st.markdown(question['Question'])
+            options = [
+                question["Option 1"],
+                question["Option 2"],
+                question["Option 3"],
+                question["Option 4"],
+            ]
 
-        # Use session state to store the selected answer
-        answer_key = f"q_{idx}"
-        if answer_key not in st.session_state:
-            st.session_state[answer_key] = st.session_state.user_answers[idx-1]
+            # Use session state to store the selected answer
+            answer_key = f"q_{idx}"
+            if answer_key not in st.session_state:
+                st.session_state[answer_key] = st.session_state.user_answers[idx-1]
 
-        selected_answer = st.radio(
-            f"Select your answer for Question {idx}:",
-            options,
-            key=answer_key,
-        )
-        st.session_state.user_answers[idx-1] = selected_answer
+            selected_answer = st.radio(
+                "Select your answer:",
+                options,
+                key=answer_key,
+                index=None  # Start with no option selected
+            )
+            st.session_state.user_answers[idx-1] = selected_answer
+            st.markdown("---")  # Add a separator between questions
 
-    if st.button("Submit Quiz"):
-        st.session_state.quiz_submitted = True
+        if st.button("Submit Quiz"):
+            st.session_state.quiz_submitted = True
 
-    # Show results after submission
-    if st.session_state.quiz_submitted:
-        st.markdown("### Quiz Results")
-        total_correct = 0
+        # Show results after submission
+        if st.session_state.quiz_submitted:
+            st.markdown("### Quiz Results")
+            total_correct = 0
 
-        for idx, (answer, question) in enumerate(zip(st.session_state.user_answers, quiz_data), start=1):
-            correct_answer = question["Correct Answer"]
-            # Convert "Option X" to actual answer text
-            correct_answer_text = question[correct_answer]
-            is_correct = answer == correct_answer_text
-            if is_correct:
-                total_correct += 1
-                st.success(f"✅ Question {idx}: Correct")
-            else:
-                st.error(f"❌ Question {idx}: Incorrect")
-            st.markdown(f"**Your Answer:** {answer}")
-            st.markdown(f"**Correct Answer:** {correct_answer_text}")
-            st.markdown(f"**Explanation:** {question['Explanation']}")
-            st.markdown("---")
+            for idx, (answer, question) in enumerate(zip(st.session_state.user_answers, quiz_data), start=1):
+                correct_answer = question["Correct Answer"]
+                # Convert "Option X" to actual answer text
+                correct_answer_text = question[correct_answer]
+                is_correct = answer == correct_answer_text
 
-        # Display total score
-        score_percentage = (total_correct / len(quiz_data)) * 100
-        st.markdown(f"### Final Score: {total_correct}/{len(quiz_data)} ({score_percentage:.1f}%)")
+                if is_correct:
+                    total_correct += 1
+                    st.success(f"✅ Question {idx}: Correct")
+                else:
+                    st.error(f"❌ Question {idx}: Incorrect")
+                
+                st.markdown(f"**Your Answer:** {answer if answer else 'Not answered'}")
+                st.markdown(f"**Correct Answer:** {correct_answer_text}")
+                st.markdown(f"**Explanation:** {question['Explanation']}")
+                st.markdown("---")
+
+            # Display total score
+            score_percentage = (total_correct / len(quiz_data)) * 100
+            st.markdown(f"### Final Score: {total_correct}/{len(quiz_data)} ({score_percentage:.1f}%)")
+            
+            # Add a retry button
+            if st.button("Try Another Quiz"):
+                st.session_state.show_quiz = False
+                st.session_state.quiz_data = None
+                st.experimental_rerun()
 
 # -------------------------------------------------------------
 # Streamlit App Layout
