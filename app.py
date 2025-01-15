@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import json
+import ast
 
 # -------------------------------------------------------------
 # API Configuration
@@ -41,23 +42,20 @@ def send_chat_request(video_id, request_type, query="."):
 
 def preprocess_quiz_data(raw_data):
     """
-    Preprocesses raw quiz JSON strings to convert them into a valid list of JSON objects.
-    Handles cases with extra newline characters or improperly separated JSON objects.
+    Preprocesses the quiz data from the API response into a list of dictionaries.
     """
     try:
-        # Join the data into one string and replace newline characters for clean parsing
-        raw_data = "".join(raw_data).replace("\n", "")
+        # Convert string representation of list to actual list
+        quiz_list = ast.literal_eval(raw_data)
         
-        # Ensure objects are properly separated by commas if needed
-        raw_data = raw_data.replace("}{", "},{")
-        
-        # Wrap the string in an array to make it valid JSON
-        formatted_data = f"[{raw_data}]"
-        
-        # Parse the JSON string into a Python list of dictionaries
-        quiz_data = json.loads(formatted_data)
+        # Parse each quiz item string into a dictionary
+        quiz_data = []
+        for quiz_item in quiz_list:
+            quiz_dict = json.loads(quiz_item)
+            quiz_data.append(quiz_dict)
+            
         return quiz_data
-    except json.JSONDecodeError as e:
+    except Exception as e:
         st.error(f"Failed to preprocess quiz data: {e}")
         return None
 
@@ -124,15 +122,19 @@ def render_quiz(quiz_data):
         total_correct = 0
 
         for idx, (answer, question) in enumerate(zip(st.session_state.user_answers, quiz_data), start=1):
-            is_correct = answer == question["Correct Answer"]
+            correct_answer = question["Correct Answer"]
+            # Convert "Option X" to actual answer text
+            correct_answer_text = question[correct_answer]
+            is_correct = answer == correct_answer_text
             if is_correct:
                 total_correct += 1
                 st.success(f"✅ Question {idx}: Correct")
             else:
                 st.error(f"❌ Question {idx}: Incorrect")
             st.markdown(f"**Your Answer:** {answer}")
-            st.markdown(f"**Correct Answer:** {question['Correct Answer']}")
+            st.markdown(f"**Correct Answer:** {correct_answer_text}")
             st.markdown(f"**Explanation:** {question['Explanation']}")
+            st.markdown("---")
 
         # Display total score
         score_percentage = (total_correct / len(quiz_data)) * 100
