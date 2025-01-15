@@ -39,16 +39,25 @@ def send_chat_request(video_id, request_type, query="."):
     except Exception as e:
         return f"An error occurred: {e}"
 
-
 def preprocess_quiz_data(raw_data):
     """
-    Preprocesses raw quiz JSON string to convert it into a valid list of JSON objects.
+    Preprocesses raw quiz JSON strings to convert them into a valid list of JSON objects.
+    Handles cases with extra newline characters or improperly separated JSON objects.
     """
     try:
-        # Parse the raw string directly into a list of dictionaries
-        quiz_data = [json.loads(item) for item in eval(raw_data)]
+        # Join the data into one string and replace newline characters for clean parsing
+        raw_data = "".join(raw_data).replace("\n", "")
+        
+        # Ensure objects are properly separated by commas if needed
+        raw_data = raw_data.replace("}{", "},{")
+        
+        # Wrap the string in an array to make it valid JSON
+        formatted_data = f"[{raw_data}]"
+        
+        # Parse the JSON string into a Python list of dictionaries
+        quiz_data = json.loads(formatted_data)
         return quiz_data
-    except Exception as e:
+    except json.JSONDecodeError as e:
         st.error(f"Failed to preprocess quiz data: {e}")
         return None
 
@@ -115,15 +124,14 @@ def render_quiz(quiz_data):
         total_correct = 0
 
         for idx, (answer, question) in enumerate(zip(st.session_state.user_answers, quiz_data), start=1):
-            correct_answer = question["Correct Answer"].split(":")[1].strip() if ":" in question["Correct Answer"] else question["Correct Answer"]
-            is_correct = answer == correct_answer
+            is_correct = answer == question["Correct Answer"]
             if is_correct:
                 total_correct += 1
                 st.success(f"✅ Question {idx}: Correct")
             else:
                 st.error(f"❌ Question {idx}: Incorrect")
             st.markdown(f"**Your Answer:** {answer}")
-            st.markdown(f"**Correct Answer:** {correct_answer}")
+            st.markdown(f"**Correct Answer:** {question['Correct Answer']}")
             st.markdown(f"**Explanation:** {question['Explanation']}")
 
         # Display total score
