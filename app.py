@@ -43,20 +43,28 @@ def send_chat_request(video_id, request_type, query="."):
 def preprocess_quiz_data(raw_data):
     """
     Preprocesses the quiz data from the API response into a list of dictionaries.
+    Handles double-escaped JSON strings from the API response.
     """
     try:
-        # Convert string representation of list to actual list
-        quiz_list = ast.literal_eval(raw_data)
+        # First, get the list of JSON strings
+        quiz_list = json.loads(raw_data)
         
         # Parse each quiz item string into a dictionary
         quiz_data = []
         for quiz_item in quiz_list:
-            quiz_dict = json.loads(quiz_item)
+            # Remove any escaped newlines and extra whitespace
+            cleaned_item = quiz_item.replace('\\n', '').strip()
+            # Parse the JSON string into a dictionary
+            quiz_dict = json.loads(cleaned_item)
             quiz_data.append(quiz_dict)
             
         return quiz_data
+    except json.JSONDecodeError as e:
+        st.error(f"Failed to parse quiz JSON: {str(e)}")
+        st.error(f"Raw data received: {raw_data[:200]}...")  # Show first 200 chars for debugging
+        return None
     except Exception as e:
-        st.error(f"Failed to preprocess quiz data: {e}")
+        st.error(f"Failed to preprocess quiz data: {str(e)}")
         return None
 
 # -------------------------------------------------------------
