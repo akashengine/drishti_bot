@@ -193,18 +193,27 @@ if 'quiz_data' not in st.session_state:
 if 'show_quiz' not in st.session_state:
     st.session_state.show_quiz = False
 
+# Logo
+st.markdown('<div class="logo-container">', unsafe_allow_html=True)
+st.image("https://drishtigpt.com/upload/images/logo/ZqUG-dashboard-2x-drishtigpt-logo.svg", width=200)
+st.markdown('</div>', unsafe_allow_html=True)
+
 # Sidebar for Video Selection
 st.sidebar.title("DrishtiGPT")
 st.sidebar.markdown('<div class="sidebar">', unsafe_allow_html=True)
 
+# Sample Video IDs
 video_ids = ["7781", "11853", "160841"]
 selected_video_id = st.sidebar.selectbox("Select Video ID", video_ids)
 st.sidebar.markdown('</div>', unsafe_allow_html=True)
+
+# Store the video_id in session state
 st.session_state.video_id = selected_video_id
 
 # Main Content
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
+# --- Video Embed ---
 st.markdown(f"""
     <div class="video-placeholder">
         <iframe 
@@ -217,7 +226,6 @@ st.markdown(f"""
         ></iframe>
     </div>
 """, unsafe_allow_html=True)
-
 # Action Buttons
 col1, col2, col3 = st.columns(3)
 
