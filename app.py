@@ -55,9 +55,9 @@ def preprocess_quiz_data(raw_data):
                     if not json_obj.strip():
                         continue
                     cleaned_item = json_obj.strip()
-                    cleaned_item = cleaned_item.encode('utf-8').decode('unicode_escape')  # Ensure UTF-8 decoding
-                    quiz_dict = json.loads(cleaned_item)
-                    quiz_data.append(quiz_dict)
+                    # Decode JSON string to ensure proper handling of Unicode text
+                    cleaned_item = json.loads(cleaned_item)
+                    quiz_data.append(cleaned_item)
             except json.JSONDecodeError as je:
                 st.error(f"Failed to parse quiz item: {je}")
                 st.error(f"Problematic item: {raw_item[:200]}...")
@@ -120,6 +120,7 @@ def render_quiz(quiz_data):
     with quiz_container:
         for idx, question in enumerate(quiz_data, start=1):
             st.markdown(f"### Question {idx}")
+            # Use 'hindi-text' class for Hindi rendering
             st.markdown(f'<div class="hindi-text">{question["Question"]}</div>', unsafe_allow_html=True)
             options = [
                 question["Option 1"],
