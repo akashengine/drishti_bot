@@ -43,11 +43,10 @@ def send_chat_request(video_id, request_type, query="."):
 def preprocess_quiz_data(raw_data):
     """
     Preprocesses the quiz data from the API response into a list of dictionaries.
-    Handles multiple JSON objects within each string and proper newline handling.
+    Handles multiple JSON objects within each string and proper Unicode handling.
     """
     try:
         raw_items = ast.literal_eval(raw_data)
-
         quiz_data = []
         for raw_item in raw_items:
             try:
@@ -56,18 +55,16 @@ def preprocess_quiz_data(raw_data):
                     if not json_obj.strip():
                         continue
                     cleaned_item = json_obj.strip()
-                    cleaned_item = cleaned_item.encode().decode('unicode_escape')
+                    cleaned_item = cleaned_item.encode('utf-8').decode('unicode_escape')  # Ensure UTF-8 decoding
                     quiz_dict = json.loads(cleaned_item)
                     quiz_data.append(quiz_dict)
             except json.JSONDecodeError as je:
                 st.error(f"Failed to parse quiz item: {je}")
                 st.error(f"Problematic item: {raw_item[:200]}...")
                 continue
-        
         if not quiz_data:
             st.error("No quiz questions could be parsed successfully")
             return None
-
         return quiz_data
     except Exception as e:
         st.error(f"Failed to preprocess quiz data: {str(e)}")
@@ -179,11 +176,11 @@ st.set_page_config(page_title="DrishtiGPT", layout="wide")
 st.markdown("""
     <style>
     @font-face {
-        font-family: 'HindiFont';
-        src: url('https://fonts.gstatic.com/s/noto-sans-devanagari/v14/4UaMrENHsxJlGDuGo1OIlL3xD9ZhCDN02-oGV0H-jHw.woff2') format('woff2');
+        font-family: 'NotoSansDevanagari';
+        src: url('https://fonts.gstatic.com/s/notosansdevanagari/v14/4UaMrENHsxJlGDuGo1OIlL3xD9ZhCDN02-oGV0H-jHw.woff2') format('woff2');
     }
     .hindi-text {
-        font-family: 'HindiFont', sans-serif;
+        font-family: 'NotoSansDevanagari', sans-serif;
         font-size: 18px;
     }
     </style>
