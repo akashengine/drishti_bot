@@ -209,8 +209,8 @@ st.markdown(f"""
     <div class="video-placeholder">
         <iframe 
             src="https://console.frontbencher.in/flm/video-player-iframe-OJ5fnQP8q7Z8X1EhbH7Fvthdc74vbfy9/{selected_video_id}"
-            width="1200"
-            height="600"
+            width="800"
+            height="400"
             allowfullscreen
             allow="accelerometer; ambient-light-sensor; autoplay; battery; camera; clipboard-write; document-domain; encrypted-media; fullscreen; geolocation; gyroscope; layout-animations; legacy-image-formats; magnetometer; microphone; midi; oversized-images; payment; picture-in-picture; publickey-credentials-get; sync-xhr; usb; vr ; wake-lock; xr-spatial-tracking"
             sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads"
