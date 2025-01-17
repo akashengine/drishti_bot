@@ -203,7 +203,7 @@ st.sidebar.title("DrishtiGPT")
 st.sidebar.markdown('<div class="sidebar">', unsafe_allow_html=True)
 
 # Sample Video IDs
-video_ids = ["7781", "11853", "160841"]
+video_ids = ["7781", "11853", "7846", "7875", "7914", "7954"]
 selected_video_id = st.sidebar.selectbox("Select Video ID", video_ids)
 st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
