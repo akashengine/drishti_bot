@@ -202,8 +202,17 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.sidebar.title("DrishtiGPT")
 st.sidebar.markdown('<div class="sidebar">', unsafe_allow_html=True)
 
-# Sample Video IDs
-video_ids = ["7781", "11853", "7846", "7875", "7914", "7954"]
+# Language Dropdown
+def get_video_ids(language):
+    if language == "English":
+        return ["7781", "7846", "7875", "7954"]
+    elif language == "Hindi":
+        return ["11853", "11898", "11933", "12002"]
+    return []
+
+selected_language = st.sidebar.selectbox("Select Language", ["English", "Hindi"])
+video_ids = get_video_ids(selected_language)
+
 selected_video_id = st.sidebar.selectbox("Select Video ID", video_ids)
 st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
@@ -213,7 +222,6 @@ st.session_state.video_id = selected_video_id
 # Main Content
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
-# --- Video Embed ---
 st.markdown(f"""
     <div class="video-placeholder">
         <iframe 
@@ -226,6 +234,7 @@ st.markdown(f"""
         ></iframe>
     </div>
 """, unsafe_allow_html=True)
+
 # Action Buttons
 col1, col2, col3 = st.columns(3)
 
